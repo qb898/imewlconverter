@@ -265,12 +265,12 @@ public class MainBody : IDisposable
             }
 
             Debug.WriteLine("start process file:" + file);
-                try
-                {
-                    var wlList = Import!.Import(file);
-                    wlList = Filter(wlList);
-                    allWlList.AddRange(wlList);
-                }
+            try
+            {
+                var wlList = Import!.Import(file);
+                wlList = Filter(wlList);
+                allWlList.AddRange(wlList);
+            }
             catch (Exception ex)
             {
                 ProcessNotice?.Invoke("词库（" + Path.GetFileName(file) + "）处理出现异常：\n\t" + ex.Message);
@@ -283,7 +283,7 @@ public class MainBody : IDisposable
         isImportProgress = false;
         if (SelectedTranslate != ChineseTranslate.NotTrans)
         {
-                ProcessNotice?.Invoke("开始繁简转换...");
+            ProcessNotice?.Invoke("开始繁简转换...");
 
             allWlList = ConvertChinese(allWlList);
         }
