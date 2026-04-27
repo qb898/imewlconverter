@@ -54,75 +54,75 @@ public class Win10MsPinyinSelfStudy : IWordLibraryExport, IWordLibraryImport
     /// </summary>
     /// <param name="wlList"></param>
     /// <returns></returns>
-        public IList<string> Export(WordLibraryList wlList)
+    public IList<string> Export(WordLibraryList wlList)
+    {
+        //Win10拼音对词条长度有限制
+        wlList = Filter(wlList);
+
+        const int MaxPerFile = 20000;
+        var list = new List<WordLibraryList>();
+
+        if (wlList.Count > MaxPerFile)
         {
-            //Win10拼音对词条长度有限制
-            wlList = Filter(wlList);
+            // Design note:
+            // Historically the exporter raised an error and still attempted to
+            // split the data using an off-by-one condition. Behavior chosen here:
+            // - Emit a user-facing notice (not an exception) to inform about
+            //   splitting.
+            // - Split strictly into chunks of at most MaxPerFile entries.
+            // - When an explicit ExportFilePath is provided, append an index
+            //   to each generated filename to avoid silent overwrites.
+            // This preserves backward compatibility (we still export) while
+            // making filename generation and splitting deterministic.
+            SendExportErrorNotice(
+                $"词条数量({wlList.Count})超过每个文件限制{MaxPerFile}，将拆分为多个文件导出。"
+            );
 
-            const int MaxPerFile = 20000;
-            var list = new List<WordLibraryList>();
-
-            if (wlList.Count > MaxPerFile)
+            var item = new WordLibraryList();
+            for (var i = 0; i < wlList.Count; i++)
             {
-                // Design note:
-                // Historically the exporter raised an error and still attempted to
-                // split the data using an off-by-one condition. Behavior chosen here:
-                // - Emit a user-facing notice (not an exception) to inform about
-                //   splitting.
-                // - Split strictly into chunks of at most MaxPerFile entries.
-                // - When an explicit ExportFilePath is provided, append an index
-                //   to each generated filename to avoid silent overwrites.
-                // This preserves backward compatibility (we still export) while
-                // making filename generation and splitting deterministic.
-                SendExportErrorNotice(
-                    $"词条数量({wlList.Count})超过每个文件限制{MaxPerFile}，将拆分为多个文件导出。"
-                );
-
-                var item = new WordLibraryList();
-                for (var i = 0; i < wlList.Count; i++)
+                item.Add(wlList[i]);
+                if (item.Count >= MaxPerFile)
                 {
-                    item.Add(wlList[i]);
-                    if (item.Count >= MaxPerFile)
-                    {
-                        list.Add(item);
-                        item = new WordLibraryList();
-                    }
+                    list.Add(item);
+                    item = new WordLibraryList();
                 }
+            }
 
-                if (item.Count != 0) list.Add(item);
+            if (item.Count != 0) list.Add(item);
+        }
+        else
+        {
+            list.Add(wlList);
+        }
+
+        var fileListSb = new StringBuilder();
+        for (var i = 0; i < list.Count; i++)
+        {
+            string tempPath;
+            if (string.IsNullOrEmpty(ExportFilePath))
+            {
+                tempPath = Path.Combine(
+                    FileOperationHelper.GetCurrentFolderPath(),
+                    "Win10微软拼音自学习词库" + (i + 1) + ".dat"
+                );
             }
             else
             {
-                list.Add(wlList);
+                // 如果指定了ExportFilePath，避免覆盖：在文件名中加入索引
+                var dir = Path.GetDirectoryName(ExportFilePath);
+                if (string.IsNullOrEmpty(dir)) dir = FileOperationHelper.GetCurrentFolderPath();
+                var baseName = Path.GetFileNameWithoutExtension(ExportFilePath);
+                var ext = Path.GetExtension(ExportFilePath);
+                tempPath = Path.Combine(dir, baseName + "_" + (i + 1) + ext);
             }
 
-            var fileListSb = new StringBuilder();
-            for (var i = 0; i < list.Count; i++)
-            {
-                string tempPath;
-                if (string.IsNullOrEmpty(ExportFilePath))
-                {
-                    tempPath = Path.Combine(
-                        FileOperationHelper.GetCurrentFolderPath(),
-                        "Win10微软拼音自学习词库" + (i + 1) + ".dat"
-                    );
-                }
-                else
-                {
-                    // 如果指定了ExportFilePath，避免覆盖：在文件名中加入索引
-                    var dir = Path.GetDirectoryName(ExportFilePath);
-                    if (string.IsNullOrEmpty(dir)) dir = FileOperationHelper.GetCurrentFolderPath();
-                    var baseName = Path.GetFileNameWithoutExtension(ExportFilePath);
-                    var ext = Path.GetExtension(ExportFilePath);
-                    tempPath = Path.Combine(dir, baseName + "_" + (i + 1) + ext);
-                }
-
-                fileListSb.AppendLine(tempPath);
-                ExportTo1File(tempPath, list[i]);
-            }
-
-            return new List<string> { "词库文件在：" + fileListSb.ToString() };
+            fileListSb.AppendLine(tempPath);
+            ExportTo1File(tempPath, list[i]);
         }
+
+        return new List<string> { "词库文件在：" + fileListSb.ToString() };
+    }
 
     public string ExportLine(WordLibrary wl)
     {
