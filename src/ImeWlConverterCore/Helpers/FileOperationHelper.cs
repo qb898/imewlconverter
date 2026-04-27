@@ -569,10 +569,8 @@ public static class FileOperationHelper
     public static bool UnZip(string fileToUnZip, string zipedFolder)
     {
         var result = true;
-        FileStream fs = null;
         ZipInputStream zipStream = null;
         ZipEntry ent = null;
-        string fileName;
 
         if (!File.Exists(fileToUnZip))
             return false;
@@ -582,42 +580,52 @@ public static class FileOperationHelper
 
         try
         {
+            // Normalize destination root for Zip Slip protection
+            var destRoot = Path.GetFullPath(zipedFolder);
+            if (!destRoot.EndsWith(Path.DirectorySeparatorChar))
+                destRoot += Path.DirectorySeparatorChar;
+
             zipStream = new ZipInputStream(File.OpenRead(fileToUnZip));
-            //if (!string.IsNullOrEmpty(password)) zipStream.Password = password;
             while ((ent = zipStream.GetNextEntry()) != null)
-                if (!string.IsNullOrEmpty(ent.Name))
+            {
+                if (string.IsNullOrEmpty(ent.Name))
+                    continue;
+
+                // Normalize zip entry path separators to the current platform's separator
+                var entryName = ent.Name
+                    .Replace('\\', Path.DirectorySeparatorChar)
+                    .Replace('/', Path.DirectorySeparatorChar);
+
+                // Combine with destination folder and resolve the full path
+                var targetPath = Path.GetFullPath(Path.Combine(zipedFolder, entryName));
+
+                // Zip Slip protection: ensure target is inside the destination root
+                if (!targetPath.StartsWith(destRoot, StringComparison.Ordinal))
+                    throw new InvalidOperationException($"Blocked zip entry path traversal: {ent.Name}");
+
+                // Handle directory entries
+                if (ent.IsDirectory)
                 {
-                    fileName = Path.Combine(zipedFolder, ent.Name);
-                    fileName = fileName.Replace('/', '\\'); //change by Mr.HopeGi
+                    Directory.CreateDirectory(targetPath);
+                    continue;
+                }
 
-                    if (fileName.EndsWith("\\"))
-                    {
-                        Directory.CreateDirectory(fileName);
-                        continue;
-                    }
+                // Ensure the parent directory exists before writing the file
+                var parentDir = Path.GetDirectoryName(targetPath);
+                if (!string.IsNullOrEmpty(parentDir))
+                    Directory.CreateDirectory(parentDir);
 
-                    //fs = File.Create(fileName);
-                    //int size = 2048;
-                    //byte[] data = new byte[size];
-                    //while (true)
-                    //{
-                    //    size = zipStream.Read(data, 0, data.Length);
-                    //    if (size > 0)
-                    //        fs.Write(data, 0, data.Length);
-                    //    else
-                    //        break;
-                    //}
-                    using (var streamWriter = File.Create(fileName))
+                using (var streamWriter = File.Create(targetPath))
+                {
+                    var buffer = new byte[10240];
+                    var size = zipStream.Read(buffer, 0, buffer.Length);
+                    while (size > 0)
                     {
-                        var buffer = new byte[10240];
-                        var size = zipStream.Read(buffer, 0, buffer.Length);
-                        while (size > 0)
-                        {
-                            streamWriter.Write(buffer, 0, size);
-                            size = zipStream.Read(buffer, 0, buffer.Length);
-                        }
+                        streamWriter.Write(buffer, 0, size);
+                        size = zipStream.Read(buffer, 0, buffer.Length);
                     }
                 }
+            }
         }
         catch
         {
@@ -625,21 +633,11 @@ public static class FileOperationHelper
         }
         finally
         {
-            if (fs != null)
-            {
-                fs.Close();
-                fs.Dispose();
-            }
-
             if (zipStream != null)
             {
                 zipStream.Close();
                 zipStream.Dispose();
             }
-
-            if (ent != null) ent = null;
-            //GC.Collect();
-            //GC.Collect(1);
         }
 
         return result;
