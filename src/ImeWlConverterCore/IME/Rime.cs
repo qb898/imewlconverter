@@ -60,7 +60,8 @@ public class Rime : BaseTextImport, IWordLibraryTextImport, IWordLibraryExport, 
     {
         var wll = new WordLibraryList();
         var lineArray = line.Split('\t');
-        if (lineArray.Length < 2) {
+        if (lineArray.Length < 2)
+        {
             return wll; // 无效行，返回空列表
         }
 

@@ -109,17 +109,17 @@ public abstract class BaseTextImport : BaseImport
         {
             var line = lines[i];
             CurrentStatus = i;
-                try
+            try
+            {
+                if (IsContent(line))
                 {
-                    if (IsContent(line))
+                    var words = ImportLine(line);
+                    if (words != null && words.Count > 0)
                     {
-                        var words = ImportLine(line);
-                        if (words != null && words.Count > 0)
-                        {
-                            wlList.AddWordLibraryList(words);
-                        }
+                        wlList.AddWordLibraryList(words);
                     }
                 }
+            }
             catch
             {
                 SendImportLineErrorNotice("无效的词条，解析失败：" + line);
