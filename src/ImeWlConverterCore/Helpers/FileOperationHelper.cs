@@ -574,10 +574,17 @@ public static class FileOperationHelper
             while ((ent = zipStream.GetNextEntry()) != null)
                 if (!string.IsNullOrEmpty(ent.Name))
                 {
-                    fileName = Path.Combine(zipedFolder, ent.Name);
-                    fileName = fileName.Replace('/', '\\'); //change by Mr.HopeGi
+                    // Normalize entry name to use platform-specific directory separator
+                    // ent.Name uses '/' as separator in zip format. Do not force '\' as
+                    // on non-Windows platforms that would create invalid paths.
+                    var relativePath = ent.Name.Replace('/', Path.DirectorySeparatorChar);
+                    fileName = Path.Combine(zipedFolder, relativePath);
 
-                    if (fileName.EndsWith("\\"))
+                    // Treat entries that end with a directory separator or are marked
+                    // as directories accordingly. Use ZipEntry.IsDirectory when
+                    // available; otherwise fall back to name suffix check.
+                    var isDirectoryEntry = ent.IsDirectory || ent.Name.EndsWith("/") || ent.Name.EndsWith("\\");
+                    if (isDirectoryEntry)
                     {
                         Directory.CreateDirectory(fileName);
                         continue;
