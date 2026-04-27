@@ -323,9 +323,9 @@ jobs:
       - build-windows
       - build-linux
       - build-macos
-      - dependency-scan
-      - secret-scan
-      - docker-build
+      # note: dependency-scan / secret-scan / docker-build are not defined
+      # in this workflow. Remove or add those jobs if you intend to include
+      # them. For now we only depend on the build jobs above.
     if: always()
     
     steps:
