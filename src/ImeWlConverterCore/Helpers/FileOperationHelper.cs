@@ -590,6 +590,22 @@ public static class FileOperationHelper
                         continue;
                     }
 
+                    // Ensure extracted path stays inside target folder (prevent Zip Slip)
+                    var fullDestinationPath = Path.GetFullPath(fileName);
+                    var destinationRoot = Path.GetFullPath(zipedFolder);
+                    if (!fullDestinationPath.StartsWith(destinationRoot, StringComparison.Ordinal))
+                    {
+                        // skip entries that would extract outside of destination
+                        continue;
+                    }
+
+                    // Ensure parent directory exists before creating file
+                    var parentDir = Path.GetDirectoryName(fullDestinationPath);
+                    if (!string.IsNullOrEmpty(parentDir) && !Directory.Exists(parentDir))
+                    {
+                        Directory.CreateDirectory(parentDir);
+                    }
+
                     //fs = File.Create(fileName);
                     //int size = 2048;
                     //byte[] data = new byte[size];
@@ -601,7 +617,7 @@ public static class FileOperationHelper
                     //    else
                     //        break;
                     //}
-                    using (var streamWriter = File.Create(fileName))
+                    using (var streamWriter = File.Create(fullDestinationPath))
                     {
                         var buffer = new byte[10240];
                         var size = zipStream.Read(buffer, 0, buffer.Length);
