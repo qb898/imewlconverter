@@ -32,6 +32,9 @@ namespace Studyzy.IMEWLConverter.IME;
 public class SougouPinyinScel : BaseImport, IWordLibraryImport
 {
     private Dictionary<int, string> pyDic = new();
+    private const int MAX_PY_COUNT_BYTES = 256; // fixed buffer size for pinyin bytes
+    private const int MAX_SAME_PY_COUNT = 1000;
+    private const int MAX_HZ_BYTECOUNT = 1024 * 16; // 16 KB
 
     #region IWordLibraryImport 成员
 
@@ -161,8 +164,12 @@ public class SougouPinyinScel : BaseImport, IWordLibraryImport
         fs.ReadExactly(num, 0, 4);
         var samePYcount = num[0] + num[1] * 256;
         var count = num[2] + num[3] * 256;
+        if (samePYcount < 0 || samePYcount > MAX_SAME_PY_COUNT)
+            throw new InvalidDataException($"Invalid samePYcount: {samePYcount}");
+        if (count < 0 || count > MAX_PY_COUNT_BYTES)
+            throw new InvalidDataException($"Invalid pinyin count bytes: {count}");
         //接下来读拼音
-        var str = new byte[256];
+        var str = new byte[MAX_PY_COUNT_BYTES];
         for (var i = 0; i < count; i++) str[i] = (byte)fs.ReadByte();
         var wordPY = new List<string>();
         for (var i = 0; i < count / 2; i++)
@@ -182,6 +189,8 @@ public class SougouPinyinScel : BaseImport, IWordLibraryImport
             num = new byte[2];
             fs.ReadExactly(num, 0, 2);
             var hzBytecount = num[0] + num[1] * 256;
+            if (hzBytecount < 0 || hzBytecount > MAX_HZ_BYTECOUNT)
+                throw new InvalidDataException($"Invalid hzBytecount: {hzBytecount}");
             str = new byte[hzBytecount];
             fs.ReadExactly(str, 0, hzBytecount);
             var word = Encoding.Unicode.GetString(str);

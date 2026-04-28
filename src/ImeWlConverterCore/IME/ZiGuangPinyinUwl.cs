@@ -117,6 +117,8 @@ public class Segment
         var lenCode = stream.ReadByte();
         lenCode = lenCode % 0x10 * 2 + lenWord / 0x80;
         lenWord = lenWord % 0x80 - 1;
+        if (lenWord < 0)
+            throw new InvalidDataException($"Invalid lenWord: {lenWord}");
         lenByte = 4 + lenWord + lenCode * 2;
 
         wl.Rank += stream.ReadByte();
