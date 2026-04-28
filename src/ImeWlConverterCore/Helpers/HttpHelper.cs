@@ -34,7 +34,8 @@ public static class HttpHelper
     {
         using var client = new HttpClient();
         var resp = Task.Run(() => client.GetStreamAsync(url)).GetAwaiter().GetResult();
-        return new StreamReader(resp, encoding).ReadToEnd();
+        using var reader = new StreamReader(resp, encoding);
+        return reader.ReadToEnd();
     }
 
     //public string GetHtml(string URL, out string cookie)

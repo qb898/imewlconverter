@@ -164,9 +164,9 @@ public class SougouPinyinScel : BaseImport, IWordLibraryImport
         fs.ReadExactly(num, 0, 4);
         var samePYcount = num[0] + num[1] * 256;
         var count = num[2] + num[3] * 256;
-        if (samePYcount < 0 || samePYcount > MAX_SAME_PY_COUNT)
+        if (samePYcount > MAX_SAME_PY_COUNT)
             throw new InvalidDataException($"Invalid samePYcount: {samePYcount}");
-        if (count < 0 || count > MAX_PY_COUNT_BYTES)
+        if (count > MAX_PY_COUNT_BYTES)
             throw new InvalidDataException($"Invalid pinyin count bytes: {count}");
         //接下来读拼音
         var str = new byte[MAX_PY_COUNT_BYTES];
@@ -189,7 +189,7 @@ public class SougouPinyinScel : BaseImport, IWordLibraryImport
             num = new byte[2];
             fs.ReadExactly(num, 0, 2);
             var hzBytecount = num[0] + num[1] * 256;
-            if (hzBytecount < 0 || hzBytecount > MAX_HZ_BYTECOUNT)
+            if (hzBytecount > MAX_HZ_BYTECOUNT)
                 throw new InvalidDataException($"Invalid hzBytecount: {hzBytecount}");
             str = new byte[hzBytecount];
             fs.ReadExactly(str, 0, hzBytecount);

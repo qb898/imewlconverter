@@ -828,7 +828,7 @@ public class SougouPinyinBinFromPython : BaseImport, IWordLibraryImport
     {
         var xk = (((p1 + p2) << 2) + ((p1 + p3) << 2)) & 0xffff;
         var n = BinFileHelper.ReadUInt16(fs) / 2;
-        if (n < 0 || n > ushort.MaxValue / 4)
+        if (n > ushort.MaxValue / 4)
             throw new InvalidDataException($"Unreasonable decryptWords count: {n}");
         var decwords = new byte[n * 4];
         for (var i = 0; i < n; i++)
