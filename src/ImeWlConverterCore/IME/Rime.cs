@@ -33,7 +33,7 @@ namespace Studyzy.IMEWLConverter.IME;
 [ComboBoxShow(ConstantString.RIME, ConstantString.RIME_C, 150)]
 public class Rime : BaseTextImport, IWordLibraryTextImport, IWordLibraryExport, IMultiCodeType
 {
-    private string lineSplitString;
+    private string lineSplitString = "\r\n";
 
     private OperationSystem os;
 
@@ -60,7 +60,8 @@ public class Rime : BaseTextImport, IWordLibraryTextImport, IWordLibraryExport, 
     {
         var wll = new WordLibraryList();
         var lineArray = line.Split('\t');
-        if (lineArray.Length < 2) {
+        if (lineArray.Length < 2)
+        {
             return wll; // 无效行，返回空列表
         }
 
@@ -100,7 +101,7 @@ public class Rime : BaseTextImport, IWordLibraryTextImport, IWordLibraryExport, 
 
     #region IWordLibraryExport 成员
 
-    private IWordCodeGenerater codeGenerater;
+    private IWordCodeGenerater? codeGenerater;
 
     //private RimeConfigForm form;
 
@@ -114,7 +115,7 @@ public class Rime : BaseTextImport, IWordLibraryTextImport, IWordLibraryExport, 
         )
             return wl.Word + "\t" + wl.Codes[0][0] + "\t" + wl.Rank;
 
-        if (codeGenerater == null) codeGenerater = CodeTypeHelper.GetGenerater(CodeType);
+        codeGenerater = CodeTypeHelper.GetGenerater(CodeType) ?? throw new InvalidOperationException($"No generator for code type {CodeType}");
         try
         {
             codeGenerater.GetCodeOfWordLibrary(wl);
@@ -167,7 +168,7 @@ public class Rime : BaseTextImport, IWordLibraryTextImport, IWordLibraryExport, 
 
     public IList<string> Export(WordLibraryList wlList)
     {
-        codeGenerater = CodeTypeHelper.GetGenerater(CodeType);
+        codeGenerater = CodeTypeHelper.GetGenerater(CodeType) ?? throw new InvalidOperationException($"No generator for code type {CodeType}");
 
         // 使用字典进行去重和词频合并
         var uniqueWords = new Dictionary<string, WordLibrary>();
@@ -183,8 +184,8 @@ public class Rime : BaseTextImport, IWordLibraryTextImport, IWordLibraryExport, 
             {
                 try
                 {
-                    if (codeGenerater == null) codeGenerater = CodeTypeHelper.GetGenerater(CodeType);
-                    codeGenerater.GetCodeOfWordLibrary(wl);
+                    if (codeGenerater == null) codeGenerater = CodeTypeHelper.GetGenerater(CodeType) ?? throw new InvalidOperationException($"No generator for code type {CodeType}");
+                    codeGenerater!.GetCodeOfWordLibrary(wl);
                 }
                 catch (Exception ex)
                 {

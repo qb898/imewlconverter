@@ -64,7 +64,7 @@ public abstract class BaseTextImport : BaseImport
             CountWord = lineCount;
             var currentLine = 0;
 
-            string line;
+            string? line;
             while ((line = sr.ReadLine()) != null)
             {
                 CurrentStatus = currentLine++;
@@ -111,7 +111,14 @@ public abstract class BaseTextImport : BaseImport
             CurrentStatus = i;
             try
             {
-                if (IsContent(line)) wlList.AddWordLibraryList(ImportLine(line));
+                if (IsContent(line))
+                {
+                    var words = ImportLine(line);
+                    if (words != null && words.Count > 0)
+                    {
+                        wlList.AddWordLibraryList(words);
+                    }
+                }
             }
             catch
             {

@@ -1,0 +1,15 @@
+name: Build and Test
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.203'
+      - name: Build solution (dotnet build)
+        run: dotnet build "src\\IME WL Converter WinForm.sln" --configuration Release
+      - name: Run tests (dotnet test)
+        run: dotnet test "src\\ImeWlConverterCoreTest\\ImeWlConverterCoreTest.csproj" --configuration Release --no-build --logger "trx"
