@@ -18,6 +18,7 @@
 using System.IO;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Studyzy.IMEWLConverter.Helpers;
 
@@ -31,9 +32,10 @@ public static class HttpHelper
 
     public static string GetHtml(string url, Encoding encoding)
     {
-        var client = new HttpClient();
-        var resp = client.GetStreamAsync(url).GetAwaiter().GetResult();
-        return new StreamReader(resp, encoding).ReadToEnd();
+        using var client = new HttpClient();
+        var resp = Task.Run(() => client.GetStreamAsync(url)).GetAwaiter().GetResult();
+        using var reader = new StreamReader(resp, encoding);
+        return reader.ReadToEnd();
     }
 
     //public string GetHtml(string URL, out string cookie)

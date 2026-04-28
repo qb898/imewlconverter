@@ -166,7 +166,9 @@ public class SougouPinyinDict
     public long GetDataPosition(int dataId, long offset)
     {
         var header = DataStore[dataId];
-        Debug.Assert(offset <= header.DataSize);
+        if (offset > header.DataSize)
+            throw new InvalidDataException(
+                $"Offset {offset} exceeds DataSize {header.DataSize} for data_id {dataId}");
         if (header.UsedDataSize > 0 && offset > header.UsedDataSize)
             Debug.WriteLine(
                 $"GetData overflow data_id: {dataId} offset: {offset}\nheader [ used: {header.UsedDataSize} size: {header.DataSize} ]"

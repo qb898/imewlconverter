@@ -26,8 +26,9 @@ namespace Studyzy.IMEWLConverter.IME;
 public class SougouPinyinBinFromPython : BaseImport, IWordLibraryImport
 {
     private const int UserDictHeaderSize = 80;
-    // Safety limits to avoid OOM or parsing of corrupted files
-    private const int MAX_WORD_SIZE = 1 * 1024 * 1024; // 1 MB per word entry
+    // Safety limits to avoid OOM or parsing of corrupted files.
+    // wordSize is read as ushort (max 65535 bytes), so no explicit upper bound check is needed
+    // beyond the zero check. MAX_PINYIN_COUNT guards the pinyin list allocation.
     private const int MAX_PINYIN_COUNT = 1024; // generous upper bound for pinyin count
     private const long MAX_FILE_SIZE = 1024L * 1024L * 1024L; // 1 GB max file size
 
@@ -86,7 +87,7 @@ public class SougouPinyinBinFromPython : BaseImport, IWordLibraryImport
 
             fs.Seek(2, SeekOrigin.Current); // word size + code size（include idx）
             var wordSize = BinFileHelper.ReadUInt16(fs);
-            if (wordSize == 0 || wordSize > MAX_WORD_SIZE)
+            if (wordSize == 0)
                 throw new InvalidDataException($"Unreasonable word size: {wordSize}");
             var str = new byte[wordSize];
             fs.ReadExactly(str, 0, wordSize);
@@ -827,7 +828,7 @@ public class SougouPinyinBinFromPython : BaseImport, IWordLibraryImport
     {
         var xk = (((p1 + p2) << 2) + ((p1 + p3) << 2)) & 0xffff;
         var n = BinFileHelper.ReadUInt16(fs) / 2;
-        if (n < 0 || n > (MAX_WORD_SIZE / 4))
+        if (n > ushort.MaxValue / 4)
             throw new InvalidDataException($"Unreasonable decryptWords count: {n}");
         var decwords = new byte[n * 4];
         for (var i = 0; i < n; i++)
