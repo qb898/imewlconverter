@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Studyzy.IMEWLConverter.Entities;
 using Studyzy.IMEWLConverter.Helpers;
@@ -309,15 +310,54 @@ public class Win10MsPinyinSelfStudy : IWordLibraryExport, IWordLibraryImport
                 bw.Write((byte)wl.Word.Length);
                 bw.Write((byte)0x5A);
                 bw.Write(Encoding.Unicode.GetBytes(wl.Word));
-                foreach (var py1 in wl.PinYin)
+
+                // Win10微软拼音自学习词库只为汉字（非ASCII）写拼音索引，
+                // ASCII字母和数字不写拼音，词条大小 = 60 - 2×ASCII字符数
+                // 注意：
+                //   - 连续的英文字母被合并为一个编码段（如 "IK"→"_IK"），
+                //     在 wl.PinYin 中只占一个条目；需以"组"为单位推进 pyArrayIdx
+                //   - 数字字符由 KeepNumber_=true 在编码生成前移除，
+                //     wl.PinYin 中没有对应条目，不推进 pyArrayIdx
+                var pinyin = wl.PinYin;
+                var chineseCount = 0;
+                var pyArrayIdx = 0; // wl.PinYin 中的当前位置
+                var charIdx = 0;
+                while (charIdx < wl.Word.Length)
                 {
-                    var py1Index = PinyinMap[py1];
-                    bw.Write(py1Index);
+                    var c = wl.Word[charIdx];
+                    if (c > '\x7F') // 汉字
+                    {
+                        short pyIdx = 0;
+                        if (pyArrayIdx < pinyin.Length
+                            && PinyinMap.TryGetValue(pinyin[pyArrayIdx], out var foundIdx))
+                            pyIdx = foundIdx;
+                        bw.Write(pyIdx);
+                        chineseCount++;
+                        pyArrayIdx++;
+                        charIdx++;
+                    }
+                    else if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
+                    {
+                        // 连续英文字母作为一组，在 wl.PinYin 中只占一个条目（如 "_IK"）
+                        // 跳过整组后 pyArrayIdx 只递增一次
+                        while (charIdx < wl.Word.Length
+                            && ((wl.Word[charIdx] >= 'A' && wl.Word[charIdx] <= 'Z')
+                                || (wl.Word[charIdx] >= 'a' && wl.Word[charIdx] <= 'z')))
+                            charIdx++;
+                        pyArrayIdx++;
+                    }
+                    else
+                    {
+                        // 数字及其他 ASCII：PinYin 中无条目，不推进
+                        charIdx++;
+                    }
                 }
 
-                var used = 12 + 4 * wl.Word.Length;
-                //一个词条60字节，剩下的补0
-                for (var j = used; j < 60; j++) bw.Write((byte)0);
+                // 词条大小 = 60 - 2×(词长 - 汉字数) = 60 - 2×ASCII字符数
+                var entrySize = 60 - 2 * (wl.Word.Length - chineseCount);
+                var used = 12 + wl.Word.Length * 2 + chineseCount * 2;
+                //补0到词条边界
+                for (var j = used; j < entrySize; j++) bw.Write((byte)0);
             }
             catch (Exception ex)
             {
@@ -339,6 +379,10 @@ public class Win10MsPinyinSelfStudy : IWordLibraryExport, IWordLibraryImport
         foreach (var wl in wlList)
         {
             if (wl.Word.Length > 12 || wl.Word.Length == 1) //最多支持12个字
+                continue;
+
+            // Win10微软拼音自学习词库要求词条中至少包含一个汉字（非ASCII字符）
+            if (!wl.Word.Any(c => c > '\x7F'))
                 continue;
 
             result.Add(wl);
