@@ -31,8 +31,7 @@ public class WordLibraryList : List<WordLibrary>
     {
         var dic = new Dictionary<string, WordLibrary>();
         foreach (var wl in this)
-            if (!dic.ContainsKey(wl.Word))
-                dic.Add(wl.Word, wl);
+            dic.TryAdd(wl.Word, wl);
 
         Clear();
         foreach (var wl in dic.Values) Add(wl);

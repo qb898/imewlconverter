@@ -48,7 +48,11 @@ public static class CollectionHelper
 
         if (list == null) return "";
 
-        foreach (var s in list) sb.Append(s + split);
+        foreach (var s in list)
+        {
+            sb.Append(s);
+            sb.Append(split);
+        }
         if (sb.Length == 0) return "";
         if (buildType == BuildType.RightContain) return sb.ToString();
         if (buildType == BuildType.FullContain) return split + sb;

@@ -34,6 +34,14 @@ namespace Studyzy.IMEWLConverter;
 public class MainBody : IDisposable
 {
     private static readonly Regex Num2ChsRegex = new("[1-9].+(0{2,100})");
+    private static readonly Regex SpaceRegex = new("(?=[^a-zA-Z])\\s+", RegexOptions.Compiled);
+    private static readonly Regex NumberRegex = new("[0-9０-９]+", RegexOptions.Compiled);
+    private static readonly Regex EnglishRegex = new("[a-zA-Zａ-ｚＡ-Ｚ]+", RegexOptions.Compiled);
+    private static readonly Regex FullWidthRegex = new("[\uff00-\uff5e]+", RegexOptions.Compiled);
+    private static readonly Regex PunctuationRegex = new(
+        "[\u0021-\u002f\u003a-\u0040\u005b-\u0060\u007b-\u008f\u00a0-\u00bf\u00d7\u00f7\u2000-\u2bff\u3000-\u303f\u30a0\u30fb\uff01-\uff0f\uff1a-\uff20\uff5b-\uff65]",
+        RegexOptions.Compiled
+    );
     private int countWord;
     private int currentStatus;
     private bool isImportProgress;
@@ -537,16 +545,6 @@ public class MainBody : IDisposable
             return;
         countWord = wordLibraryList.Count;
         currentStatus = 0;
-        var spaceRegex = new Regex("(?=[^a-zA-Z])\\s+");
-        var numberRegex = new Regex("[0-9０-９]+");
-        var englishRegex = new Regex("[a-zA-Zａ-ｚＡ-Ｚ]+");
-        var fullWidthRegex = new Regex("[\uff00-\uff5e]+");
-        // Regex fullWidthRegex = new Regex("[ａ-ｚＡ-Ｚ０-９]+");
-        // Regex punctuationRegex = new Regex("[-・·&%']");
-        var punctuationRegex = new Regex(
-            "[\u0021-\u002f\u003a-\u0040\u005b-\u0060\u007b-\u008f\u00a0-\u00bf\u00d7\u00f7\u2000-\u2bff\u3000-\u303f\u30a0\u30fb\uff01-\uff0f\uff1a-\uff20\uff5b-\uff65]"
-        );
-
         foreach (var wordLibrary in wordLibraryList)
         {
             currentStatus++;
@@ -563,7 +561,7 @@ public class MainBody : IDisposable
                 var word_0 = wordLibrary.Word;
                 var word = wordLibrary.Word;
 
-                if (FilterConfig.FullWidth && fullWidthRegex.IsMatch(word))
+                if (FilterConfig.FullWidth && FullWidthRegex.IsMatch(word))
                 {
                     var c = word.ToCharArray();
                     for (var i = 0; i < c.Length; i++)
@@ -572,26 +570,26 @@ public class MainBody : IDisposable
                     word = new string(c);
                 }
 
-                if (FilterConfig.KeepNumber_) word = numberRegex.Replace(word, "");
+                if (FilterConfig.KeepNumber_) word = NumberRegex.Replace(word, "");
 
-                if (FilterConfig.KeepEnglish_) word = englishRegex.Replace(word, "");
+                if (FilterConfig.KeepEnglish_) word = EnglishRegex.Replace(word, "");
 
                 if (FilterConfig.KeepSpace_)
                 {
                     if (FilterConfig.KeepSpace == false)
                         word = word.Replace(" ", "");
                     else
-                        word = spaceRegex.Replace(word, "");
+                        word = SpaceRegex.Replace(word, "");
                 }
 
-                if (FilterConfig.KeepPunctuation_) word = punctuationRegex.Replace(word, "");
+                if (FilterConfig.KeepPunctuation_) word = PunctuationRegex.Replace(word, "");
 
                 if (FilterConfig.ChsNumber) word = TranslateChineseNumber(word);
 
                 if (
-                    (FilterConfig.KeepEnglish && englishRegex.IsMatch(word))
-                    || (FilterConfig.KeepNumber && numberRegex.IsMatch(word))
-                    || (FilterConfig.KeepPunctuation && punctuationRegex.IsMatch(word))
+                    (FilterConfig.KeepEnglish && EnglishRegex.IsMatch(word))
+                    || (FilterConfig.KeepNumber && NumberRegex.IsMatch(word))
+                    || (FilterConfig.KeepPunctuation && PunctuationRegex.IsMatch(word))
                 )
                 {
                     var input = new StringBuilder();
@@ -612,7 +610,7 @@ public class MainBody : IDisposable
                             type = 2;
                         else if ("-・&%'".Contains(c))
                             type = 3;
-                        else if (punctuationRegex.IsMatch(c.ToString()))
+                        else if (PunctuationRegex.IsMatch(c.ToString()))
                             type = 3;
                         else
                             type = 0;
