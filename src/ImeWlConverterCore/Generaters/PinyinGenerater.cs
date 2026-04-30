@@ -18,7 +18,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using Studyzy.IMEWLConverter.Entities;
 using Studyzy.IMEWLConverter.Helpers;
 
@@ -26,43 +25,37 @@ namespace Studyzy.IMEWLConverter.Generaters;
 
 public class PinyinGenerater : BaseCodeGenerater, IWordCodeGenerater
 {
-    private static Dictionary<string, List<string>> mutiPinYinWord = new Dictionary<string, List<string>>();
+    private static readonly Lazy<(Dictionary<string, List<string>> dict, List<string> sortedKeys)> lazyMutiPinYin =
+        new Lazy<(Dictionary<string, List<string>>, List<string>)>(LoadMutiPinYin);
 
-    private void InitMutiPinYinWord()
+    private static (Dictionary<string, List<string>> dict, List<string> sortedKeys) LoadMutiPinYin()
     {
-        // Design note:
-        // The field `mutiPinYinWord` is initialized to an empty dictionary at declaration.
-        // The original code checked only for null before loading data from the
-        // embedded resource `WordPinyin.txt`, which meant the loader never ran and
-        // multi-character pinyin overrides were not applied. Check for Count == 0
-        // as well to ensure the resource is loaded exactly once when needed.
-        if (mutiPinYinWord == null || mutiPinYinWord.Count == 0)
+        var wlList = new Dictionary<string, List<string>>();
+        var content = DictionaryHelper.GetResourceContent("WordPinyin.txt");
+        var lines = content.Split(new[] { "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+        for (var i = 0; i < lines.Length; i++)
         {
-            var wlList = new Dictionary<string, List<string>>();
-            var lines = GetMutiPinyin()
-                .Split(new[] { "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-            for (var i = 0; i < lines.Length; i++)
-            {
-                var line = lines[i].Split(' ');
-                if (line.Length < 2) continue;
+            var line = lines[i].Split(' ');
+            if (line.Length < 2) continue;
 
-                var py = line[0];
-                var word = line[1];
+            var py = line[0];
+            var word = line[1];
 
-                var pinyin = new List<string>(
-                    py.Split(new[] { '\'' }, StringSplitOptions.RemoveEmptyEntries)
-                );
-                wlList.TryAdd(word, pinyin);
-            }
-
-            mutiPinYinWord = wlList;
+            var pinyin = new List<string>(
+                py.Split(new[] { '\'' }, StringSplitOptions.RemoveEmptyEntries)
+            );
+            wlList.TryAdd(word, pinyin);
         }
+
+        // Pre-sort keys by length descending for greedy matching
+        var sortedKeys = new List<string>(wlList.Keys);
+        sortedKeys.Sort((a, b) => b.Length.CompareTo(a.Length));
+
+        return (wlList, sortedKeys);
     }
 
-    private string GetMutiPinyin()
-    {
-        return DictionaryHelper.GetResourceContent("WordPinyin.txt");
-    }
+    private static Dictionary<string, List<string>> MutiPinYinWord => lazyMutiPinYin.Value.dict;
+    private static List<string> SortedMutiPinYinKeys => lazyMutiPinYin.Value.sortedKeys;
 
     /// <summary>
     ///     一个词中是否有多音字注音
@@ -71,8 +64,7 @@ public class PinyinGenerater : BaseCodeGenerater, IWordCodeGenerater
     /// <returns></returns>
     private bool IsInWordPinYin(string word)
     {
-        InitMutiPinYinWord();
-        foreach (var key in mutiPinYinWord.Keys)
+        foreach (var key in MutiPinYinWord.Keys)
             if (word.Contains(key))
                 return true;
 
@@ -87,14 +79,10 @@ public class PinyinGenerater : BaseCodeGenerater, IWordCodeGenerater
     /// <returns></returns>
     private List<string> GenerateMutiWordPinYin(string word)
     {
-        InitMutiPinYinWord();
         var pinyin = new string[word.Length];
         var matched = new bool[word.Length]; // Track which positions have been matched
 
-        // Sort keys by length (descending) to match longer words first
-        var sortedKeys = mutiPinYinWord.Keys.OrderByDescending(k => k.Length).ToList();
-
-        foreach (var key in sortedKeys)
+        foreach (var key in SortedMutiPinYinKeys)
         {
             // Find all occurrences of this key in the word
             var index = 0;
@@ -114,9 +102,10 @@ public class PinyinGenerater : BaseCodeGenerater, IWordCodeGenerater
                 // If no overlap, apply the match
                 if (canMatch)
                 {
-                    for (var i = 0; i < mutiPinYinWord[key].Count; i++)
+                    var pinyins = MutiPinYinWord[key];
+                    for (var i = 0; i < pinyins.Count; i++)
                     {
-                        pinyin[index + i] = mutiPinYinWord[key][i];
+                        pinyin[index + i] = pinyins[i];
                         matched[index + i] = true;
                     }
                 }

@@ -119,8 +119,6 @@ public class WordLibrary
         {
             //CodeType=CodeType.Pinyin;
             Codes = new Code(value, true);
-            var i = 0;
-            foreach (var s in value) Codes[i++] = new List<string> { s };
         }
     }
 

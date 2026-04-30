@@ -160,66 +160,63 @@ public static class PinyinHelper
 
     #region Init
 
-    private static readonly Dictionary<char, List<string>> dictionary = new();
-    private static readonly Dictionary<char, IList<string>> pyDictionary = new();
+    private static readonly Lazy<Dictionary<char, List<string>>> lazyPinYinWithToneDict =
+        new Lazy<Dictionary<char, List<string>>>(BuildPinYinWithToneDict);
+
+    private static readonly Lazy<Dictionary<char, IList<string>>> lazyPinYinDict =
+        new Lazy<Dictionary<char, IList<string>>>(BuildPinYinDict);
+
+    private static Dictionary<char, List<string>> BuildPinYinWithToneDict()
+    {
+        var dict = new Dictionary<char, List<string>>();
+        var pyList = DictionaryHelper.GetAll();
+
+        foreach (var code in pyList)
+        {
+            var hz = code.Word;
+            var py = code.Pinyins;
+            if (!string.IsNullOrEmpty(py)) dict.Add(hz, new List<string>(py.Split(';')));
+        }
+
+        return dict;
+    }
+
+    private static Dictionary<char, IList<string>> BuildPinYinDict()
+    {
+        var dict = new Dictionary<char, IList<string>>();
+        var pyList = DictionaryHelper.GetAll();
+
+        foreach (var code in pyList)
+        {
+            var hz = code.Word;
+            var pys = code.Pinyins;
+            if (!string.IsNullOrEmpty(pys))
+                foreach (var s in pys.Split(','))
+                {
+                    var py = s.Remove(s.Length - 1); //remove tone
+                    if (dict.TryGetValue(hz, out var existing))
+                    {
+                        if (!existing.Contains(py)) existing.Add(py);
+                    }
+                    else
+                    {
+                        dict.Add(hz, new List<string> { py });
+                    }
+                }
+        }
+
+        return dict;
+    }
 
     /// <summary>
     ///     字的拼音(包括音调)
     /// </summary>
-    private static Dictionary<char, List<string>> PinYinWithToneDict
-    {
-        get
-        {
-            if (dictionary.Count == 0)
-            {
-                var pyList = DictionaryHelper.GetAll();
-
-                foreach (var code in pyList)
-                {
-                    var hz = code.Word;
-                    var py = code.Pinyins;
-                    if (!string.IsNullOrEmpty(py)) dictionary.Add(hz, new List<string>(py.Split(';')));
-                }
-            }
-
-            return dictionary;
-        }
-    }
+    private static Dictionary<char, List<string>> PinYinWithToneDict => lazyPinYinWithToneDict.Value;
 
     /// <summary>
     ///     字的拼音，不包括音调
     /// </summary>
-    public static Dictionary<char, IList<string>> PinYinDict
-    {
-        get
-        {
-            if (pyDictionary.Count == 0)
-            {
-                var pyList = DictionaryHelper.GetAll();
-
-                foreach (var code in pyList)
-                {
-                    var hz = code.Word;
-                    var pys = code.Pinyins;
-                    if (!string.IsNullOrEmpty(pys))
-                        foreach (var s in pys.Split(','))
-                        {
-                            var py = s.Remove(s.Length - 1); //remove tone
-                            if (pyDictionary.ContainsKey(hz))
-                            {
-                                if (!pyDictionary[hz].Contains(py)) pyDictionary[hz].Add(py);
-                            }
-                            else
-                            {
-                                pyDictionary.Add(hz, new List<string> { py });
-                            }
-                        }
-                }
-            }
-
-            return pyDictionary;
-        }
-    }
+    public static Dictionary<char, IList<string>> PinYinDict => lazyPinYinDict.Value;
 
     #endregion
 
