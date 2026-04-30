@@ -407,9 +407,7 @@ execute_test_suite() {
         test_case_count=$((test_case_count + 1))
         
         # 将format_options作为环境变量传递
-        FORMAT_OPTIONS="${format_options}" execute_test_case "${test_case}" "${suite_dir}"
-        
-        if [[ $? -ne 0 ]]; then
+        if ! FORMAT_OPTIONS="${format_options}" execute_test_case "${test_case}" "${suite_dir}"; then
             failed_count=$((failed_count + 1))
         fi
     done <<< "${test_cases}"

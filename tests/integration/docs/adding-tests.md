@@ -1,8 +1,3 @@
-[path]
-/Users/devinzeng/Code/studyzy/imewlconverter/tests/integration/docs/adding-tests.md
-[instructions]
-I will add a Chinese guide describing how to add new integration test cases in under 10 minutes.
-[code_edit]
 # 添加集成测试用例指南（<10分钟）
 
 本指南帮助你在 10 分钟内完成一个新的集成测试用例。
