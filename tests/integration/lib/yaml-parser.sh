@@ -121,7 +121,7 @@ extract_test_case_names() {
 # 输出：标签列表（每行一个）
 extract_test_case_tags() {
     local yaml_file="$1"
-    local test_name="$2"
+    # $2: test_name - 保留参数，供将来使用
     
     if [[ ! -f "${yaml_file}" ]]; then
         return 1
@@ -143,7 +143,7 @@ extract_test_case_tags() {
 # 返回：0=启用, 1=禁用
 is_test_case_enabled() {
     local yaml_file="$1"
-    local test_index="$2"
+    # $2: test_index - 保留参数，供将来使用
     
     # 简单实现：假设所有测试都启用
     # 实际需要解析enabled字段

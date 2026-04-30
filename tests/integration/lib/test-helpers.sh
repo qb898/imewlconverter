@@ -45,7 +45,7 @@ get_integration_dir() {
 get_repo_root() {
     local integration_dir
     integration_dir="$(get_integration_dir)"
-    echo "$(cd "${integration_dir}/../.." && pwd)"
+    (cd "${integration_dir}/../.." && pwd)
 }
 
 # 函数：确保目录存在

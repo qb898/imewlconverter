@@ -14,31 +14,49 @@ COLOR_OUTPUT_LOADED=true
 # 颜色代码定义
 # ============================================================================
 
-# ANSI颜色代码
+# ANSI颜色代码（部分供外部引用使用）
+# shellcheck disable=SC2034
 readonly COLOR_RESET='\033[0m'
+# shellcheck disable=SC2034
 readonly COLOR_RED='\033[0;31m'
+# shellcheck disable=SC2034
 readonly COLOR_GREEN='\033[0;32m'
+# shellcheck disable=SC2034
 readonly COLOR_YELLOW='\033[0;33m'
+# shellcheck disable=SC2034
 readonly COLOR_BLUE='\033[0;34m'
+# shellcheck disable=SC2034
 readonly COLOR_MAGENTA='\033[0;35m'
+# shellcheck disable=SC2034
 readonly COLOR_CYAN='\033[0;36m'
+# shellcheck disable=SC2034
 readonly COLOR_WHITE='\033[0;37m'
 
 # 粗体颜色
+# shellcheck disable=SC2034
 readonly COLOR_BOLD_RED='\033[1;31m'
+# shellcheck disable=SC2034
 readonly COLOR_BOLD_GREEN='\033[1;32m'
+# shellcheck disable=SC2034
 readonly COLOR_BOLD_YELLOW='\033[1;33m'
+# shellcheck disable=SC2034
 readonly COLOR_BOLD_BLUE='\033[1;34m'
+# shellcheck disable=SC2034
 readonly COLOR_BOLD_WHITE='\033[1;37m'
 
 # ============================================================================
 # 符号定义
 # ============================================================================
 
+# shellcheck disable=SC2034
 readonly SYMBOL_CHECK='✓'
+# shellcheck disable=SC2034
 readonly SYMBOL_CROSS='✗'
+# shellcheck disable=SC2034
 readonly SYMBOL_ARROW='→'
+# shellcheck disable=SC2034
 readonly SYMBOL_DOT='•'
+# shellcheck disable=SC2034
 readonly SYMBOL_STAR='★'
 
 # ============================================================================
